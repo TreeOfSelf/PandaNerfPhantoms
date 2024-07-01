@@ -1,9 +1,10 @@
 {
 	"required": true,
-	"package": "me.sebastian420.pandanerfphantoms.mixin",
+	"package": "me.sebastian420.PandaNerfPhantoms.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin"
+		"PhantomEntityMixin",
+		"PhantomSpawnerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
