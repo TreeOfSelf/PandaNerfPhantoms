@@ -20,7 +20,9 @@ import net.minecraft.world.spawner.PhantomSpawner;
 import net.minecraft.world.spawner.SpecialSpawner;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Iterator;
 
@@ -28,75 +30,77 @@ import java.util.Iterator;
 public abstract class PhantomSpawnerMixin implements SpecialSpawner {
 	@Shadow private int cooldown;
 
-	@Override
-	public int spawn(ServerWorld world, boolean spawnMonsters, boolean spawnAnimals) {
-			if (!spawnMonsters) {
-				return 0;
-			} else if (!world.getGameRules().getBoolean(GameRules.DO_INSOMNIA)) {
-				return 0;
-			} else {
-				Random random = world.random;
-				--this.cooldown;
-				if (this.cooldown > 0) {
-					return 0;
-				} else {
-					this.cooldown += (120 + random.nextInt(600)) * 20;
-					if (world.getAmbientDarkness() < 5 && world.getDimension().hasSkyLight()) {
-						return 0;
-					} else {
-						int i = 0;
-						Iterator var6 = world.getPlayers().iterator();
-
-						while(true) {
-							LocalDifficulty localDifficulty;
-							BlockPos blockPos2;
-							BlockState blockState;
-							FluidState fluidState;
-							do {
-								BlockPos blockPos;
-								int j;
-								do {
-									ServerPlayerEntity serverPlayerEntity;
-									do {
-										do {
-											do {
-												if (!var6.hasNext()) {
-													return(i);
-												}
-
-												serverPlayerEntity = (ServerPlayerEntity)var6.next();
-											} while(serverPlayerEntity.isSpectator());
-
-											blockPos = serverPlayerEntity.getBlockPos();
-										} while(world.getDimension().hasSkyLight() && (blockPos.getY() < world.getSeaLevel() || !world.isSkyVisible(blockPos)));
-
-										localDifficulty = world.getLocalDifficulty(blockPos);
-									} while(!localDifficulty.isHarderThan(random.nextFloat() * 3.0F));
-
-									ServerStatHandler serverStatHandler = serverPlayerEntity.getStatHandler();
-									j = MathHelper.clamp(serverStatHandler.getStat(Stats.CUSTOM.getOrCreateStat(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
-								} while(random.nextInt(j) < 168000);
-
-								blockPos2 = blockPos.up(20 + random.nextInt(15)).east(-10 + random.nextInt(21)).south(-10 + random.nextInt(21));
-								blockState = world.getBlockState(blockPos2);
-								fluidState = world.getFluidState(blockPos2);
-							} while(!SpawnHelper.isClearForSpawn(world, blockPos2, blockState, fluidState, EntityType.PHANTOM));
-
-							EntityData entityData = null;
-							int l = 1 + random.nextInt(localDifficulty.getGlobalDifficulty().getId() + 1);
-
-							for(int m = 0; m < l; ++m) {
-								PhantomEntity phantomEntity = (PhantomEntity)EntityType.PHANTOM.create(world);
-								if (phantomEntity != null) {
-									phantomEntity.refreshPositionAndAngles(blockPos2, 0.0F, 0.0F);
-									entityData = phantomEntity.initialize(world, localDifficulty, SpawnReason.NATURAL, entityData);
-									world.spawnEntityAndPassengers(phantomEntity);
-									++i;
-								}
-							}
-						}
-					}
-				}
-			}
+	@Inject(method = "spawn", at = @At(value = "HEAD"), cancellable = true)
+	public void spawn(ServerWorld world, boolean spawnMonsters, boolean spawnAnimals, CallbackInfoReturnable<Integer> cir) {
+		if (!spawnMonsters) {
+			cir.setReturnValue(0);
+			cir.cancel();
+			return;
 		}
+
+		if (!world.getGameRules().getBoolean(GameRules.DO_INSOMNIA)) {
+			cir.setReturnValue(0);
+			cir.cancel();
+			return;
+		}
+
+		Random random = world.random;
+		--this.cooldown;
+
+		if (this.cooldown > 0) {
+			cir.setReturnValue(0);
+			cir.cancel();
+			return;
+		}
+
+		this.cooldown += (120 + random.nextInt(600)) * 20;
+
+		if (world.getAmbientDarkness() < 5 && world.getDimension().hasSkyLight()) {
+			cir.setReturnValue(0);
+			cir.cancel();
+			return;
+		}
+
+		int i = 0;
+
+        for (ServerPlayerEntity serverPlayerEntity : world.getPlayers()) {
+            if (!serverPlayerEntity.isSpectator()) {
+                BlockPos blockPos = serverPlayerEntity.getBlockPos();
+
+                if (!world.getDimension().hasSkyLight() || (blockPos.getY() >= world.getSeaLevel() && world.isSkyVisible(blockPos))) {
+                    LocalDifficulty localDifficulty = world.getLocalDifficulty(blockPos);
+
+                    if (localDifficulty.isHarderThan(random.nextFloat() * 3.0F)) {
+                        ServerStatHandler serverStatHandler = serverPlayerEntity.getStatHandler();
+                        int j = MathHelper.clamp(serverStatHandler.getStat(Stats.CUSTOM.getOrCreateStat(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
+
+                        if (random.nextInt(j) >= 168000) {
+                            BlockPos spawnPos = blockPos.up(20 + random.nextInt(15)).east(-10 + random.nextInt(21)).south(-10 + random.nextInt(21));
+                            BlockState blockState = world.getBlockState(spawnPos);
+                            FluidState fluidState = world.getFluidState(spawnPos);
+
+                            if (SpawnHelper.isClearForSpawn(world, spawnPos, blockState, fluidState, EntityType.PHANTOM)) {
+                                EntityData entityData = null;
+                                int l = 1 + random.nextInt(localDifficulty.getGlobalDifficulty().getId() + 1);
+
+                                for (int m = 0; m < l; ++m) {
+                                    PhantomEntity phantomEntity = (PhantomEntity) EntityType.PHANTOM.create(world);
+
+                                    if (phantomEntity != null) {
+                                        phantomEntity.refreshPositionAndAngles(spawnPos, 0.0F, 0.0F);
+                                        entityData = phantomEntity.initialize(world, localDifficulty, SpawnReason.NATURAL, entityData);
+                                        world.spawnEntityAndPassengers(phantomEntity);
+                                        ++i;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+		cir.setReturnValue(i);
+		cir.cancel();
+	}
 }

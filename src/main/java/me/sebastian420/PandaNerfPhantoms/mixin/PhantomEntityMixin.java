@@ -31,7 +31,11 @@ public abstract class PhantomEntityMixin extends LivingEntity {
             ServerStatHandler serverStatHandler = serverPlayerEntity.getStatHandler();
             int j = MathHelper.clamp(serverStatHandler.getStat(Stats.CUSTOM.getOrCreateStat(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
             if (j < 168000) {
-                this.setOnFireFor(60);
+                if (!this.hasCustomName()) {
+                    if (this.random.nextInt(60) == 0) {
+                        this.setOnFireFor(7);
+                    }
+                }
             }
         }
 

@@ -16,7 +16,7 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"me.sebastian420.pandanerfphantoms.Pandanerfphantoms"
+			"me.sebastian420.PandaNerfPhantoms.PandaNerfPhantoms"
 		]
 	},
 	"mixins": [
