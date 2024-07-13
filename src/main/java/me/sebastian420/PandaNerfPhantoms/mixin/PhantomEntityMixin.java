@@ -24,6 +24,7 @@ public abstract class PhantomEntityMixin extends LivingEntity {
     @Inject(method = "mobTick", at = @At(value = "HEAD"))
     protected void mobTick(CallbackInfo ci) {
         PhantomEntity phantomEntity = (PhantomEntity) (Object) this;
+        if (phantomEntity.hasCustomName()) return;
         LivingEntity target = phantomEntity.getTarget();
         if (target instanceof PlayerEntity) {
             PlayerEntity playerEntity = (PlayerEntity) target;
@@ -31,10 +32,8 @@ public abstract class PhantomEntityMixin extends LivingEntity {
             ServerStatHandler serverStatHandler = serverPlayerEntity.getStatHandler();
             int j = MathHelper.clamp(serverStatHandler.getStat(Stats.CUSTOM.getOrCreateStat(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
             if (j < 168000) {
-                if (!this.hasCustomName()) {
-                    if (this.random.nextInt(10) == 0) {
-                        this.setOnFireFor(10);
-                    }
+                if (this.random.nextInt(10) == 0) {
+                    this.setOnFireFor(10);
                 }
             }
         }
