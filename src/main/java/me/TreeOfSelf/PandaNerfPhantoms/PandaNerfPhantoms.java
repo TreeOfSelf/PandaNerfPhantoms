@@ -1,4 +1,4 @@
-package me.sebastian420.PandaNerfPhantoms;
+package me.TreeOfSelf.PandaNerfPhantoms;
 
 import net.fabricmc.api.ModInitializer;
 

@@ -1,4 +1,4 @@
-package me.sebastian420.PandaNerfPhantoms.mixin;
+package me.TreeOfSelf.PandaNerfPhantoms.mixin;
 
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
