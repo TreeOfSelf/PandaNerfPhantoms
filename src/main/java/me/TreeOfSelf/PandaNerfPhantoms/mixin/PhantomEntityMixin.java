@@ -21,7 +21,7 @@ public abstract class PhantomEntityMixin extends LivingEntity {
         super(entityType, world);
     }
 
-    @Inject(method = "mobTick", at = @At(value = "HEAD"))
+    @Inject(method = "tick", at = @At(value = "HEAD"))
     protected void mobTick(CallbackInfo ci) {
         PhantomEntity phantomEntity = (PhantomEntity) (Object) this;
         if (phantomEntity.hasCustomName()) return;

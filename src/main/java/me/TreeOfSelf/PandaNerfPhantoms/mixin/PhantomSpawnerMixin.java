@@ -84,7 +84,7 @@ public abstract class PhantomSpawnerMixin implements SpecialSpawner {
                                 int l = 1 + random.nextInt(localDifficulty.getGlobalDifficulty().getId() + 1);
 
                                 for (int m = 0; m < l; ++m) {
-                                    PhantomEntity phantomEntity = (PhantomEntity) EntityType.PHANTOM.create(world);
+                                    PhantomEntity phantomEntity = (PhantomEntity) EntityType.PHANTOM.create(world,SpawnReason.EVENT);
 
                                     if (phantomEntity != null) {
                                         phantomEntity.refreshPositionAndAngles(spawnPos, 0.0F, 0.0F);
