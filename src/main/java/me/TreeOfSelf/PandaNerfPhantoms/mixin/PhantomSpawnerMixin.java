@@ -22,6 +22,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Iterator;
@@ -31,16 +32,14 @@ public abstract class PhantomSpawnerMixin implements SpecialSpawner {
 	@Shadow private int cooldown;
 
 	@Inject(method = "spawn", at = @At(value = "HEAD"), cancellable = true)
-	public void spawn(ServerWorld world, boolean spawnMonsters, boolean spawnAnimals, CallbackInfoReturnable<Integer> cir) {
+	public void spawn(ServerWorld world, boolean spawnMonsters, boolean spawnAnimals, CallbackInfo ci) {
 		if (!spawnMonsters) {
-			cir.setReturnValue(0);
-			cir.cancel();
+			ci.cancel();
 			return;
 		}
 
 		if (!world.getGameRules().getBoolean(GameRules.DO_INSOMNIA)) {
-			cir.setReturnValue(0);
-			cir.cancel();
+			ci.cancel();
 			return;
 		}
 
@@ -48,16 +47,14 @@ public abstract class PhantomSpawnerMixin implements SpecialSpawner {
 		--this.cooldown;
 
 		if (this.cooldown > 0) {
-			cir.setReturnValue(0);
-			cir.cancel();
+			ci.cancel();
 			return;
 		}
 
 		this.cooldown += (120 + random.nextInt(600)) * 20;
 
 		if (world.getAmbientDarkness() < 5 && world.getDimension().hasSkyLight()) {
-			cir.setReturnValue(0);
-			cir.cancel();
+			ci.cancel();
 			return;
 		}
 
@@ -100,7 +97,6 @@ public abstract class PhantomSpawnerMixin implements SpecialSpawner {
             }
         }
 
-		cir.setReturnValue(i);
-		cir.cancel();
+		ci.cancel();
 	}
 }
