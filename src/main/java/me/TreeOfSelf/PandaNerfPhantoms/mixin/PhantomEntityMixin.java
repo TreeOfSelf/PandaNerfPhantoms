@@ -1,5 +1,6 @@
 package me.TreeOfSelf.PandaNerfPhantoms.mixin;
 
+import me.TreeOfSelf.PandaNerfPhantoms.PandaNerfPhantoms;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.PhantomEntity;
@@ -23,6 +24,7 @@ public abstract class PhantomEntityMixin extends LivingEntity {
 
     @Inject(method = "tick", at = @At(value = "HEAD"))
     protected void mobTick(CallbackInfo ci) {
+        if (!PandaNerfPhantoms.CONFIG.burnPhantoms) return;
         PhantomEntity phantomEntity = (PhantomEntity) (Object) this;
         if (phantomEntity.hasCustomName()) return;
         LivingEntity target = phantomEntity.getTarget();
@@ -31,7 +33,7 @@ public abstract class PhantomEntityMixin extends LivingEntity {
             ServerPlayerEntity serverPlayerEntity = (ServerPlayerEntity) playerEntity;
             ServerStatHandler serverStatHandler = serverPlayerEntity.getStatHandler();
             int j = MathHelper.clamp(serverStatHandler.getStat(Stats.CUSTOM.getOrCreateStat(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
-            if (j < 168000) {
+            if (j < PandaNerfPhantoms.CONFIG.getInsomniaThresholdTicks()) {
                 if (this.random.nextInt(10) == 0) {
                     this.setOnFireFor(10);
                 }

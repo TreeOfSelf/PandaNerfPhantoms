@@ -1,5 +1,6 @@
 package me.TreeOfSelf.PandaNerfPhantoms.mixin;
 
+import me.TreeOfSelf.PandaNerfPhantoms.PandaNerfPhantoms;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.EntityData;
 import net.minecraft.entity.EntityType;
@@ -71,7 +72,7 @@ public abstract class PhantomSpawnerMixin implements SpecialSpawner {
                         ServerStatHandler serverStatHandler = serverPlayerEntity.getStatHandler();
                         int j = MathHelper.clamp(serverStatHandler.getStat(Stats.CUSTOM.getOrCreateStat(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
 
-                        if (random.nextInt(j) >= 168000) {
+                        if (random.nextInt(j) >= PandaNerfPhantoms.CONFIG.getInsomniaThresholdTicks()) {
                             BlockPos spawnPos = blockPos.up(20 + random.nextInt(15)).east(-10 + random.nextInt(21)).south(-10 + random.nextInt(21));
                             BlockState blockState = world.getBlockState(spawnPos);
                             FluidState fluidState = world.getFluidState(spawnPos);
