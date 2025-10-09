@@ -33,7 +33,7 @@ public abstract class PhantomSpawnerMixin implements SpecialSpawner {
 	@Shadow private int cooldown;
 
 	@Inject(method = "spawn", at = @At(value = "HEAD"), cancellable = true)
-	public void spawn(ServerWorld world, boolean spawnMonsters, boolean spawnAnimals, CallbackInfo ci) {
+	public void spawn(ServerWorld world, boolean spawnMonsters, CallbackInfo ci) {
 		if (!spawnMonsters) {
 			ci.cancel();
 			return;
