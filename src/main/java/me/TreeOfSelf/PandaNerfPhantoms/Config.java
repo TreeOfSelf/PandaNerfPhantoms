@@ -21,8 +21,7 @@ public class Config {
         if (configFile.exists()) {
             try (FileReader reader = new FileReader(configFile)) {
                 return GSON.fromJson(reader, Config.class);
-            } catch (IOException e) {
-                PandaNerfPhantoms.LOGGER.error("Failed to load config, using defaults", e);
+            } catch (IOException ignored) {
             }
         }
         
@@ -37,8 +36,7 @@ public class Config {
         
         try (FileWriter writer = new FileWriter(configFile)) {
             GSON.toJson(this, writer);
-        } catch (IOException e) {
-            PandaNerfPhantoms.LOGGER.error("Failed to save config", e);
+        } catch (IOException ignored) {
         }
     }
     
