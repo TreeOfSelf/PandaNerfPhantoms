@@ -14,9 +14,9 @@ import net.minecraft.stat.Stats;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.random.Random;
-import net.minecraft.world.GameRules;
 import net.minecraft.world.LocalDifficulty;
 import net.minecraft.world.SpawnHelper;
+import net.minecraft.world.rule.GameRules;
 import net.minecraft.world.spawner.PhantomSpawner;
 import net.minecraft.world.spawner.SpecialSpawner;
 import org.spongepowered.asm.mixin.Mixin;
@@ -39,7 +39,7 @@ public abstract class PhantomSpawnerMixin implements SpecialSpawner {
 			return;
 		}
 
-		if (!world.getGameRules().getBoolean(GameRules.DO_INSOMNIA)) {
+		if (!world.getGameRules().getValue(GameRules.SPAWN_PHANTOMS)) {
 			ci.cancel();
 			return;
 		}
