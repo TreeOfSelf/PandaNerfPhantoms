@@ -3,12 +3,11 @@
 	"id": "panda-nerf-phantoms",
 	"version": "${version}",
 	"name": "panda-nerf-phantoms",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Configurable phantom insomnia threshold and optional burning when targeting rested players.",
 	"authors": [
-		"Me!"
+		"TreeOfSelf"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
@@ -16,19 +15,16 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-          "me.TreeOfSelf.PandaNerfPhantoms.PandaNerfPhantoms"
+			"me.TreeOfSelf.PandaNerfPhantoms.PandaNerfPhantoms"
 		]
 	},
 	"mixins": [
 		"panda-nerf-phantoms.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.15.11",
-		"minecraft": "~1.21",
-		"java": ">=21",
+		"fabricloader": ">=0.18.6",
+		"minecraft": "~26.1.1",
+		"java": ">=25",
 		"fabric-api": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
 	}
 }

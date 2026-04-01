@@ -1,99 +1,96 @@
 package me.TreeOfSelf.PandaNerfPhantoms.mixin;
 
 import me.TreeOfSelf.PandaNerfPhantoms.PandaNerfPhantoms;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.EntityData;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnReason;
-import net.minecraft.entity.mob.PhantomEntity;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.stat.ServerStatHandler;
-import net.minecraft.stat.Stats;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.LocalDifficulty;
-import net.minecraft.world.SpawnHelper;
-import net.minecraft.world.rule.GameRules;
-import net.minecraft.world.spawner.PhantomSpawner;
-import net.minecraft.world.spawner.SpecialSpawner;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.stats.ServerStatsCounter;
+import net.minecraft.stats.Stats;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.entity.monster.Phantom;
+import net.minecraft.world.level.NaturalSpawner;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.levelgen.PhantomSpawner;
+import net.minecraft.world.level.material.FluidState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import java.util.Iterator;
 
 @Mixin(PhantomSpawner.class)
-public abstract class PhantomSpawnerMixin implements SpecialSpawner {
-	@Shadow private int cooldown;
+public abstract class PhantomSpawnerMixin {
+	@Shadow
+	private int nextTick;
 
-	@Inject(method = "spawn", at = @At(value = "HEAD"), cancellable = true)
-	public void spawn(ServerWorld world, boolean spawnMonsters, CallbackInfo ci) {
-		if (!spawnMonsters) {
+	@Inject(method = "tick", at = @At("HEAD"), cancellable = true)
+	private void pandaNerfPhantoms$tick(ServerLevel level, boolean spawnEnemies, CallbackInfo ci) {
+		if (!spawnEnemies) {
 			ci.cancel();
 			return;
 		}
 
-		if (!world.getGameRules().getValue(GameRules.SPAWN_PHANTOMS)) {
+		if (!level.getGameRules().get(GameRules.SPAWN_PHANTOMS)) {
 			ci.cancel();
 			return;
 		}
 
-		Random random = world.random;
-		--this.cooldown;
+		RandomSource random = level.getRandom();
+		this.nextTick--;
 
-		if (this.cooldown > 0) {
+		if (this.nextTick > 0) {
 			ci.cancel();
 			return;
 		}
 
-		this.cooldown += (120 + random.nextInt(600)) * 20;
+		this.nextTick += (120 + random.nextInt(600)) * 20;
 
-		if (world.getAmbientDarkness() < 5 && world.getDimension().hasSkyLight()) {
+		if (level.getSkyDarken() < 5 && level.dimensionType().hasSkyLight()) {
 			ci.cancel();
 			return;
 		}
 
-        for (ServerPlayerEntity serverPlayerEntity : world.getPlayers()) {
-            if (!serverPlayerEntity.isSpectator()) {
-                BlockPos blockPos = serverPlayerEntity.getBlockPos();
+		for (ServerPlayer player : level.players()) {
+			if (!player.isSpectator()) {
+				BlockPos playerPos = player.blockPosition();
 
-                if (!world.getDimension().hasSkyLight() || (blockPos.getY() >= world.getSeaLevel() && world.isSkyVisible(blockPos))) {
-                    LocalDifficulty localDifficulty = world.getLocalDifficulty(blockPos);
+				if (!level.dimensionType().hasSkyLight() || (playerPos.getY() >= level.getSeaLevel() && level.canSeeSky(playerPos))) {
+					DifficultyInstance difficulty = level.getCurrentDifficultyAt(playerPos);
 
-                    if (localDifficulty.isHarderThan(random.nextFloat() * 3.0F)) {
-                        ServerStatHandler serverStatHandler = serverPlayerEntity.getStatHandler();
-                        int j = MathHelper.clamp(serverStatHandler.getStat(Stats.CUSTOM.getOrCreateStat(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
+					if (difficulty.isHarderThan(random.nextFloat() * 3.0F)) {
+						ServerStatsCounter stats = player.getStats();
+						int value = Mth.clamp(stats.getValue(Stats.CUSTOM.get(Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE);
 
-                        if (random.nextInt(j) >= PandaNerfPhantoms.CONFIG.getInsomniaThresholdTicks()) {
-                            BlockPos spawnPos = blockPos.up(20 + random.nextInt(15)).east(-10 + random.nextInt(21)).south(-10 + random.nextInt(21));
-                            BlockState blockState = world.getBlockState(spawnPos);
-                            FluidState fluidState = world.getFluidState(spawnPos);
+						if (random.nextInt(value) >= PandaNerfPhantoms.CONFIG.getInsomniaThresholdTicks()) {
+							BlockPos spawnPos = playerPos.above(20 + random.nextInt(15)).east(-10 + random.nextInt(21)).south(-10 + random.nextInt(21));
+							BlockState blockState = level.getBlockState(spawnPos);
+							FluidState fluidState = level.getFluidState(spawnPos);
 
-                            if (SpawnHelper.isClearForSpawn(world, spawnPos, blockState, fluidState, EntityType.PHANTOM)) {
-                                EntityData entityData = null;
-                                int l = 1 + random.nextInt(localDifficulty.getGlobalDifficulty().getId() + 1);
+							if (NaturalSpawner.isValidEmptySpawnBlock(level, spawnPos, blockState, fluidState, EntityType.PHANTOM)) {
+								SpawnGroupData groupData = null;
+								int groupSize = 1 + random.nextInt(difficulty.getDifficulty().getId() + 1);
 
-                                for (int m = 0; m < l; ++m) {
-                                    PhantomEntity phantomEntity = EntityType.PHANTOM.create(world,SpawnReason.EVENT);
+								for (int i = 0; i < groupSize; i++) {
+									Phantom phantom = EntityType.PHANTOM.create(level, EntitySpawnReason.EVENT);
 
-                                    if (phantomEntity != null) {
-                                        phantomEntity.refreshPositionAndAngles(spawnPos, 0.0F, 0.0F);
-                                        entityData = phantomEntity.initialize(world, localDifficulty, SpawnReason.NATURAL, entityData);
-                                        world.spawnEntityAndPassengers(phantomEntity);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+									if (phantom != null) {
+										phantom.snapTo(spawnPos, 0.0F, 0.0F);
+										groupData = phantom.finalizeSpawn(level, difficulty, EntitySpawnReason.NATURAL, groupData);
+										level.addFreshEntityWithPassengers(phantom);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 
 		ci.cancel();
 	}
